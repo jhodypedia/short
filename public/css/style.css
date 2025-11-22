@@ -354,6 +354,30 @@ body.page {
     justify-content: center;
 }
 
+.sponsor-banner {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.sponsor-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #9ca3af;
+    margin-bottom: 6px;
+}
+
+.sponsor-inner {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
 /* Responsive */
 
 @media (max-width: 640px) {
