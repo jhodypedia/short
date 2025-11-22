@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Mengalihkan...</title>
+    <title><%= title %> • Mengalihkan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -11,30 +11,59 @@
 
 <div id="adblock-overlay" class="adblock-overlay" style="display:none;">
     <div class="adblock-box">
-        <h2>AdBlock Terdeteksi</h2>
-        <p>Silakan nonaktifkan AdBlock untuk melanjutkan ke tujuan link.</p>
-        <p>Refresh halaman ini setelah menonaktifkan AdBlock.</p>
+        <h2>Pemeriksaan Diblokir</h2>
+        <p>Beberapa pemblokir konten aktif dan mengganggu proses pengecekan tautan.</p>
+        <p>Nonaktifkan pemblokir sejenak lalu refresh halaman ini.</p>
     </div>
 </div>
 
 <main class="container redirect-container">
     <section class="card glass card-redirect">
 
-        <!-- HEADER LABEL SAJA (TANPA IKLAN) -->
         <div class="sponsor-banner">
             <div class="sponsor-label">Sponsored Content</div>
         </div>
 
-        <h1 class="title">Sebentar ya...</h1>
-        <p class="subtitle" id="subtitle-text">
-            Kamu akan dialihkan ke halaman tujuan. Klik tombol di bawah, lihat iklan sebentar, lalu klik lagi untuk lanjut.
-        </p>
+        <!-- ARTIKEL / INFORMASI -->
+        <article class="link-article">
+            <h1 class="title"><%= title %></h1>
+            <p class="subtitle" id="subtitle-text">
+                Halaman yang kamu minta sedang kami siapkan. Kami menambahkan lapisan informasi di sini
+                agar kamu tahu ke mana tautan ini akan membawamu, sekaligus memastikan tautan tetap aktif
+                dan dapat diakses tanpa masalah.
+            </p>
 
-        <!-- BOX SPONSORED CONTENT (IKLAN ADA DI SINI) -->
+            <div class="article-body">
+                <p>
+                    Terkadang sebuah tautan dibagikan berkali-kali melalui chat, media sosial, atau forum.
+                    Dengan halaman perantara seperti ini, kamu bisa memiliki sedikit gambaran sebelum benar-benar
+                    berpindah ke tujuan utama. Ini membantu mengurangi tautan yang salah klik, rusak, atau
+                    mengarah ke halaman yang sudah tidak tersedia.
+                </p>
+                <p>
+                    Jika tautan ini dibagikan oleh seseorang yang kamu kenal atau dari sumber yang kamu percaya,
+                    kemungkinan besar kontennya aman untuk diakses. Namun tetaplah berhati-hati saat memasukkan
+                    data pribadi, password, atau informasi sensitif di halaman berikutnya. Pastikan alamat situs
+                    tujuan terlihat benar dan menggunakan koneksi yang aman (https).
+                </p>
+                <p>
+                    Setelah proses pengecekan singkat selesai, kamu bisa melanjutkan ke halaman tujuan dengan
+                    menekan tombol di bawah. Jika halaman tidak terbuka, kamu selalu dapat kembali ke sini dan
+                    mencoba lagi.
+                </p>
+            </div>
+        </article>
+
+        <!-- LOADING SEBELUM TOMBOL MUNCUL -->
+        <div id="global-loader" style="display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-size:13px;color:#9ca3af;">
+            <span class="spinner"></span>
+            <span>Memproses tautan dan menyiapkan halaman tujuan…</span>
+        </div>
+
+        <!-- BOX SPONSORED CONTENT -->
         <div class="ad-wrapper">
             <h2 class="ad-title">Sponsored Content</h2>
             <div class="ad-box" id="ad-box">
-                <!-- ====== IKLAN BANNER ADSTERRA (1x) DI DALAM BOX ====== -->
                 <div id="ad-inner">
                     <script type="text/javascript">
                         atOptions = {
@@ -47,17 +76,17 @@
                     </script>
                     <script type="text/javascript" src="//www.highperformanceformat.com/fea41e5f8bbdf475847093a76298a876/invoke.js"></script>
                 </div>
-                <!-- ===================================================== -->
             </div>
         </div>
 
-        <button id="continueBtn" class="btn btn-primary btn-continue">
+        <!-- BUTTON, AWALNYA DISEMBUNYIKAN -->
+        <button id="continueBtn" class="btn btn-primary btn-continue" style="display:none;">
             <span id="spinner" class="spinner" style="display:none;"></span>
             <span id="btn-text">Lanjutkan</span>
         </button>
 
         <p class="hint small" id="hint-text">
-            Klik pertama untuk fokus ke iklan. Klik kedua untuk menuju URL asli.
+            Setelah proses singkat ini, kamu akan dialihkan ke halaman tujuan.
         </p>
     </section>
 </main>
@@ -68,9 +97,9 @@
 <script>
     (function () {
         const code = '<%= code %>';
+        const adClickUrl = "//pl27528697.effectivegatecpm.com/fd/5a/08/fd5a08e141beade9d62603a0b39dd5c8.js";
         let clickedOnce = false;
 
-        // Deteksi AdBlock sederhana (bait + cek tinggi ad-box)
         function detectAdBlock() {
             const bait = document.createElement('div');
             bait.className = 'adsbox';
@@ -96,39 +125,46 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            setTimeout(detectAdBlock, 1200);
-
             const btn = document.getElementById('continueBtn');
             const spinner = document.getElementById('spinner');
             const btnText = document.getElementById('btn-text');
             const subtitle = document.getElementById('subtitle-text');
             const hint = document.getElementById('hint-text');
+            const loader = document.getElementById('global-loader');
+
+            setTimeout(detectAdBlock, 1200);
+
+            // Tahan tombol, tampilkan loading dulu
+            setTimeout(function () {
+                if (loader) loader.style.display = 'none';
+                btn.style.display = 'inline-flex';
+                subtitle.textContent = 'Pemeriksaan selesai. Kamu bisa melanjutkan ke halaman tujuan.';
+            }, 2000);
 
             btn.addEventListener('click', function (e) {
                 e.preventDefault();
 
-                // kalau adblock overlay muncul, paksa matiin dulu
                 if (document.getElementById('adblock-overlay').style.display === 'flex') {
-                    alert('Harap nonaktifkan AdBlock dan refresh halaman ini.');
+                    alert('Pemeriksaan tautan terhalang pemblokir konten. Nonaktifkan dulu lalu refresh.');
                     return;
                 }
 
-                // KLIK PERTAMA → fokus ke iklan dalam box
+                // KLIK PERTAMA → buka iklan onclick di tab baru
                 if (!clickedOnce) {
                     clickedOnce = true;
 
-                    const adBox = document.getElementById('ad-box');
-                    if (adBox) {
-                        adBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    try {
+                        window.open(adClickUrl, '_blank');
+                    } catch (err) {
+                        console.error('Popup blocked:', err);
                     }
 
-                    btnText.textContent = 'Lanjutkan ke URL Asli';
-                    subtitle.textContent = 'Silakan lihat/interaksikan iklan di box Sponsored Content, lalu klik tombol ini lagi untuk lanjut.';
-                    hint.textContent = 'Klik pertama fokus ke iklan. Klik kedua mengalihkan ke URL asli.';
+                    btnText.textContent = 'Buka Halaman';
+                    hint.textContent = 'Jika halaman tujuan belum terbuka, tekan tombol satu kali lagi.';
                     return;
                 }
 
-                // KLIK KEDUA → redirect ke URL asli via API
+                // KLIK KEDUA → redirect ke URL asli
                 if (btn.classList.contains('loading')) return;
 
                 btn.classList.add('loading');
@@ -148,25 +184,25 @@
                     if (res && res.success && res.url) {
                         window.location.href = res.url;
                     } else {
-                        alert('Terjadi kesalahan saat mengambil URL tujuan.');
-                        const btn = document.getElementById('continueBtn');
-                        const spinner = document.getElementById('spinner');
-                        const btnText = document.getElementById('btn-text');
-                        btn.classList.remove('loading');
-                        spinner.style.display = 'none';
-                        btnText.textContent = 'Coba Lagi';
+                        resetButton('Terjadi kesalahan, coba lagi.');
                     }
                 },
                 error: function () {
-                    alert('Gagal terhubung ke server.');
-                    const btn = document.getElementById('continueBtn');
-                    const spinner = document.getElementById('spinner');
-                    const btnText = document.getElementById('btn-text');
-                    btn.classList.remove('loading');
-                    spinner.style.display = 'none';
-                    btnText.textContent = 'Coba Lagi';
+                    resetButton('Gagal terhubung, coba lagi.');
                 }
             });
+        }
+
+        function resetButton(message) {
+            const btn = document.getElementById('continueBtn');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btn-text');
+            const hint = document.getElementById('hint-text');
+
+            if (btn) btn.classList.remove('loading');
+            if (spinner) spinner.style.display = 'none';
+            if (btnText) btnText.textContent = 'Coba Lagi';
+            if (hint && message) hint.textContent = message;
         }
     })();
 </script>
