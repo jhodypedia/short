@@ -12,19 +12,18 @@
 <div id="adblock-overlay" class="adblock-overlay" style="display: none;">
     <div class="adblock-box">
         <h2>AdBlock Terdeteksi</h2>
-        <p>Silakan nonaktifkan AdBlock untuk melanjutkan ke tujuan link.</p>
-        <p>Refresh halaman ini setelah menonaktifkan AdBlock.</p>
+        <p>Silakan nonaktifkan AdBlock untuk melanjutkan.</p>
+        <p>Refresh halaman setelah menonaktifkan AdBlock.</p>
     </div>
 </div>
 
 <main class="container redirect-container">
     <section class="card glass card-redirect">
 
-        <!-- SPONSORED BANNER ATAS -->
+        <!-- SPONSORED CONTENT BANNER -->
         <div class="sponsor-banner">
-            <div class="sponsor-label">Sponsored</div>
+            <div class="sponsor-label">Sponsored Content</div>
             <div class="sponsor-inner">
-                <!-- ====== BANNER ADSTERRA (SPONSORED) MULAI DI SINI ====== -->
                 <script type="text/javascript">
                     atOptions = {
                         'key' : 'fea41e5f8bbdf475847093a76298a876',
@@ -35,159 +34,117 @@
                     };
                 </script>
                 <script type="text/javascript" src="//www.highperformanceformat.com/fea41e5f8bbdf475847093a76298a876/invoke.js"></script>
-                <!-- ====== BANNER ADSTERRA (SPONSORED) SELESAI DI SINI ====== -->
-                <noscript style="font-size:12px;color:#9ca3af;">
-                    Aktifkan JavaScript untuk melihat iklan sponsored.
-                </noscript>
             </div>
         </div>
 
-        <h1 class="title">Sebentar ya...</h1>
-        <p class="subtitle" id="subtitle-text">
-            Kamu akan dialihkan ke halaman tujuan. Mohon klik tombol di bawah dan tunggu beberapa detik.
-        </p>
+        <h1 class="title">Sebentar ya…</h1>
+        <p class="subtitle" id="subtitle-text">Klik tombol di bawah, lihat iklan sebentar, lalu klik sekali lagi untuk lanjut ke tujuan.</p>
 
-        <!-- IKLAN UTAMA DI TENGAH -->
+        <!-- BOX IKLAN UTAMA -->
         <div class="ad-wrapper">
             <h2 class="ad-title">Sponsored Content</h2>
             <div class="ad-box" id="ad-box">
-                <!-- ====== ADSTERRA CODE UTAMA MULAI DI SINI ====== -->
+                <!-- SCRIPT IKLAN UTAMA (1x saja) -->
                 <script type="text/javascript" src="//pl27528697.effectivegatecpm.com/fd/5a/08/fd5a08e141beade9d62603a0b39dd5c8.js"></script>
-                <!-- ====== ADSTERRA CODE UTAMA SELESAI DI SINI ====== -->
-                <noscript style="font-size:12px;color:#9ca3af;">
-                    Aktifkan JavaScript untuk melihat iklan.
-                </noscript>
             </div>
         </div>
 
+        <!-- BUTTON -->
         <button id="continueBtn" class="btn btn-primary btn-continue">
-            <span id="spinner" class="spinner" style="display: none;"></span>
+            <span id="spinner" class="spinner" style="display:none;"></span>
             <span id="btn-text">Lanjutkan</span>
         </button>
 
-        <p class="hint small" id="hint-text">
-            Untuk pertama kali, kamu mungkin akan melihat iklan sebelum dialihkan ke halaman tujuan.
-        </p>
+        <p class="hint small" id="hint-text">Klik pertama memuat iklan. Klik kedua membawa kamu ke URL tujuan.</p>
     </section>
 </main>
 
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"
-        integrity="sha256-3fp9G6bT5N2z3N4R0rT7xvFeoJq6Digw1k3jv4mxYyk="
-        crossorigin="anonymous"></script>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
 <script>
-    (function () {
-        const code = '<%= code %>';
-        const storageKey = 'short_seen_' + code; // sudah pernah sampai URL asli
-        let hasClickedOnce = false;              // klik pertama (lihat iklan dulu)
+(function () {
+    const code = '<%= code %>';
+    const seenKey = 'seen_' + code; 
+    let clickedOnce = false;
 
-        // Deteksi AdBlock (bait + cek ad-box)
-        function detectAdBlock() {
-            const bait = document.createElement('div');
-            bait.className = 'adsbox';
-            bait.style.position = 'absolute';
-            bait.style.left = '-9999px';
-            bait.style.height = '10px';
-            bait.style.width = '10px';
-            document.body.appendChild(bait);
+    // Detect AdBlock
+    function detectAdBlock() {
+        const bait = document.createElement('div');
+        bait.className = 'adsbox';
+        bait.style.position = 'absolute';
+        bait.style.left = '-9999px';
+        document.body.appendChild(bait);
 
-            const baitBlocked =
-                window.getComputedStyle(bait).display === 'none' ||
-                bait.offsetHeight === 0 ||
-                bait.offsetParent === null;
+        const blocked = window.getComputedStyle(bait).display === 'none';
+        document.body.removeChild(bait);
 
-            document.body.removeChild(bait);
+        if (blocked) {
+            document.getElementById('adblock-overlay').style.display = 'flex';
+        }
+    }
 
-            const adBox = document.getElementById('ad-box');
-            const adBoxBlocked = !adBox || adBox.offsetHeight === 0;
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(detectAdBlock, 800);
 
-            if (baitBlocked || adBoxBlocked) {
-                document.getElementById('adblock-overlay').style.display = 'flex';
-            }
+        const btn = document.getElementById('continueBtn');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btn-text');
+        const subtitle = document.getElementById('subtitle-text');
+
+        // Jika user sudah pernah lihat iklan → langsung redirect
+        if (localStorage.getItem(seenKey) === '1') {
+            return doRedirect();
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            // beri waktu script iklan untuk load
-            setTimeout(detectAdBlock, 1500);
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
 
-            const btn = document.getElementById('continueBtn');
-            const spinner = document.getElementById('spinner');
-            const btnText = document.getElementById('btn-text');
-            const subtitleText = document.getElementById('subtitle-text');
-            const hintText = document.getElementById('hint-text');
-
-            function doRedirect() {
-                $.ajax({
-                    url: '/api/continue/' + encodeURIComponent(code),
-                    method: 'GET',
-                    dataType: 'json',
-                    success: function (res) {
-                        if (!res || !res.success || !res.url) {
-                            btnText.textContent = 'Terjadi kesalahan';
-                            spinner.style.display = 'none';
-                            btn.classList.remove('loading');
-                            return;
-                        }
-
-                        try {
-                            localStorage.setItem(storageKey, '1');
-                        } catch (e) {}
-
-                        setTimeout(function () {
-                            window.location.href = res.url;
-                        }, 1200);
-                    },
-                    error: function () {
-                        btnText.textContent = 'Error, coba lagi';
-                        spinner.style.display = 'none';
-                        btn.classList.remove('loading');
-                    }
-                });
+            if (document.getElementById('adblock-overlay').style.display === 'flex') {
+                alert("Nonaktifkan AdBlock untuk melanjutkan.");
+                return;
             }
 
-            // Kalau sudah pernah sampai tujuan (device ini) → bisa auto redirect
-            try {
-                if (localStorage.getItem(storageKey) === '1') {
-                    doRedirect();
-                    return;
-                }
-            } catch (e) {}
+            // KLIK PERTAMA: wajib lihat iklan dulu
+            if (!clickedOnce) {
+                clickedOnce = true;
+                const adBox = document.getElementById('ad-box');
+                adBox.scrollIntoView({ behavior: "smooth", block: "center" });
 
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
+                btnText.textContent = "Lanjutkan ke URL";
+                subtitle.textContent = "Scroll lihat iklan di atas, lalu klik tombol ini lagi.";
+                return;
+            }
 
-                if (document.getElementById('adblock-overlay').style.display === 'flex') {
-                    alert('Harap nonaktifkan AdBlock dan refresh halaman ini.');
-                    return;
-                }
+            // KLIK KEDUA: lakukan redirect
+            btn.classList.add('loading');
+            spinner.style.display = 'inline-block';
+            btnText.textContent = "Mengalihkan...";
 
-                // STEP 1: Klik pertama → fokuskan ke iklan dulu
-                if (!hasClickedOnce) {
-                    hasClickedOnce = true;
-
-                    // Scroll ke area iklan biar user beneran lihat
-                    const adBox = document.getElementById('ad-box');
-                    if (adBox) {
-                        adBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-
-                    btnText.textContent = 'Lanjutkan ke URL Asli';
-                    subtitleText.textContent = 'Silakan lihat atau interaksikan iklan di atas, lalu klik tombol ini lagi untuk menuju halaman tujuan.';
-                    hintText.textContent = 'Klik pertama untuk membuka/lihat iklan, klik kedua untuk menuju URL asli.';
-
-                    return; // belum redirect, baru "wajib lihat iklan dulu"
-                }
-
-                // STEP 2: Klik kedua → baru redirect ke URL asli
-                if (btn.classList.contains('loading')) return;
-
-                btn.classList.add('loading');
-                spinner.style.display = 'inline-block';
-                btnText.textContent = 'Mengalihkan...';
-
-                setTimeout(doRedirect, 700);
-            });
+            setTimeout(doRedirect, 700);
         });
-    })();
+    });
+
+    function doRedirect() {
+        $.ajax({
+            url: '/api/continue/' + encodeURIComponent('<%= code %>'),
+            method: 'GET',
+            dataType: 'json',
+            success: function (res) {
+                if (res.success && res.url) {
+                    localStorage.setItem(seenKey, '1');
+                    window.location.href = res.url;
+                } else {
+                    alert("Gagal mengalihkan.");
+                }
+            },
+            error: function () {
+                alert("Terjadi kesalahan koneksi.");
+            }
+        });
+    }
+})();
 </script>
+
 </body>
 </html>
