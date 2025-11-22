@@ -16,7 +16,7 @@
 <main class="container">
     <section class="card glass card-main">
         <h1 class="title">Buat Link Pendek</h1>
-        <p class="subtitle">Pendek, rapi, dan siap di-share ke mana saja.</p>
+        <p class="subtitle">Persingkat tautan dan beri judul agar lebih rapi saat dibagikan.</p>
 
         <% if (error) { %>
             <div class="alert alert-error">
@@ -26,22 +26,47 @@
 
         <form action="/shorten" method="post" class="short-form">
             <div class="form-group">
-                <label for="url">URL Asli</label>
-                <input type="text" id="url" name="url" placeholder="https://contoh.com/artikel-super-panjang" required>
+                <label for="title">Judul / Nama Tautan (opsional)</label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value="<%= title || '' %>"
+                    placeholder="Misal: Tutorial Node.js Dasar, Landing Page Promo, dsb.">
             </div>
+
+            <div class="form-group">
+                <label for="url">URL Asli</label>
+                <input
+                    type="text"
+                    id="url"
+                    name="url"
+                    placeholder="https://contoh.com/artikel-super-panjang"
+                    required>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-animate">
-                <span>Buat Link</span>
+                <span>Buat Link Pendek</span>
             </button>
         </form>
 
         <% if (shortUrl) { %>
             <div class="result">
-                <h2>Link Pendek Kamu</h2>
+                <h2>Link Pendek Siap Dipakai</h2>
+
+                <% if (title) { %>
+                    <p class="hint" style="margin-bottom:6px;">
+                        Judul: <strong><%= title %></strong>
+                    </p>
+                <% } %>
+
                 <div class="result-row">
                     <input type="text" id="shortUrl" value="<%= shortUrl %>" readonly>
                     <button type="button" class="btn btn-secondary" id="copyBtn">Salin</button>
                 </div>
-                <p class="hint">Bagikan link ini. Pengunjung akan melihat halaman iklan dulu sebelum diarahkan ke URL asli.</p>
+                <p class="hint">
+                    Pengunjung akan melihat halaman informasi singkat sebelum diarahkan ke URL asli.
+                </p>
             </div>
         <% } %>
     </section>
@@ -65,7 +90,6 @@
             document.execCommand('copy');
 
             $(this).text('Tersalin!');
-
             setTimeout(() => {
                 $('#copyBtn').text('Salin');
             }, 1500);
