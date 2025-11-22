@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Mengalihkan...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="page page-redirect">
+<div class="bg-gradient"></div>
+
+<div id="adblock-overlay" class="adblock-overlay" style="display: none;">
+    <div class="adblock-box">
+        <h2>AdBlock Terdeteksi</h2>
+        <p>Silakan nonaktifkan AdBlock untuk melanjutkan ke tujuan link.</p>
+        <p>Refresh halaman ini setelah menonaktifkan AdBlock.</p>
+    </div>
+</div>
+
+<main class="container redirect-container">
+    <section class="card glass card-redirect">
+        <h1 class="title">Sebentar ya...</h1>
+        <p class="subtitle">
+            Kamu akan dialihkan ke halaman tujuan. Mohon klik tombol di bawah dan tunggu beberapa detik.
+        </p>
+
+        <div class="ad-wrapper">
+            <h2 class="ad-title">Sponsored</h2>
+            <div class="ad-box" id="ad-box">
+                <!-- ====== ADSTERRA CODE MULAI DI SINI ====== -->
+                <!-- Tempel script Adsterra kamu di sini, contoh (JANGAN pakai ini, pakai dari akunmu):
+
+                <script type="text/javascript">
+                    // Adsterra script di sini...
+                </script>
+
+                -->
+                <!-- ====== ADSTERRA CODE SELESAI DI SINI ====== -->
+            </div>
+        </div>
+
+        <button id="continueBtn" class="btn btn-primary btn-continue">
+            <span id="spinner" class="spinner" style="display: none;"></span>
+            <span id="btn-text">Lanjutkan</span>
+        </button>
+
+        <p class="hint small">Untuk pertama kali, kamu mungkin akan melihat iklan sebelum dialihkan ke halaman tujuan.</p>
+    </section>
+</main>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"
+        integrity="sha256-3fp9G6bT5N2z3N4R0rT7xvFeoJq6Digw1k3jv4mxYyk="
+        crossorigin="anonymous"></script>
+<script>
+    (function () {
+        const code = '<%= code %>';
+        const storageKey = 'short_seen_' + code;
+
+        // Deteksi AdBlock
+        function detectAdBlock() {
+            const bait = document.createElement('div');
+            bait.className = 'adsbox'; // banyak AdBlock blokir class ini
+            bait.style.position = 'absolute';
+            bait.style.left = '-9999px';
+            bait.style.height = '10px';
+            bait.style.width = '10px';
+            document.body.appendChild(bait);
+
+            const blocked = window.getComputedStyle(bait).display === 'none'
+                || bait.offsetHeight === 0
+                || bait.offsetParent === null;
+
+            document.body.removeChild(bait);
+
+            if (blocked) {
+                document.getElementById('adblock-overlay').style.display = 'flex';
+            }
+        }
+
+        // Jalankan setelah DOM siap
+        document.addEventListener('DOMContentLoaded', function () {
+            detectAdBlock();
+
+            const btn = document.getElementById('continueBtn');
+            const spinner = document.getElementById('spinner');
+            const btnText = document.getElementById('btn-text');
+
+            function doRedirect() {
+                // AJAX ke server untuk ambil URL asli
+                $.ajax({
+                    url: '/api/continue/' + code,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (res) {
+                        if (!res.success) {
+                            btnText.textContent = 'Terjadi kesalahan';
+                            spinner.style.display = 'none';
+                            btn.classList.remove('loading');
+                            return;
+                        }
+
+                        try {
+                            localStorage.setItem(storageKey, '1');
+                        } catch (e) { }
+
+                        setTimeout(function () {
+                            window.location.href = res.url;
+                        }, 1500);
+                    },
+                    error: function () {
+                        btnText.textContent = 'Error, coba lagi';
+                        spinner.style.display = 'none';
+                        btn.classList.remove('loading');
+                    }
+                });
+            }
+
+            // Kalau sudah pernah lihat iklan (device ini), auto redirect tanpa klik
+            try {
+                if (localStorage.getItem(storageKey) === '1') {
+                    // langsung redirect (tetap lewat API)
+                    doRedirect();
+                    return;
+                }
+            } catch (e) { }
+
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Jika AdBlock overlay muncul, paksa disable dulu
+                if (document.getElementById('adblock-overlay').style.display === 'flex') {
+                    alert('Harap nonaktifkan AdBlock dan refresh halaman ini.');
+                    return;
+                }
+
+                if (btn.classList.contains('loading')) return;
+
+                btn.classList.add('loading');
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Mengalihkan...';
+
+                // Sedikit delay biar efek loading kerasa
+                setTimeout(doRedirect, 800);
+            });
+        });
+    })();
+</script>
+</body>
+</html>
