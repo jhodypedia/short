@@ -45,19 +45,22 @@ function generateCode(length = 6) {
 app.get('/', async (req, res) => {
   res.render('index', {
     shortUrl: null,
-    error: null
+    error: null,
+    title: null
   });
 });
 
 // Handle shorten
 app.post('/shorten', async (req, res) => {
-  let { url } = req.body;
+  let { url, title } = req.body;
   url = (url || '').trim();
+  title = (title || '').trim();
 
   if (!url) {
     return res.render('index', {
       shortUrl: null,
-      error: 'URL tidak boleh kosong.'
+      error: 'URL tidak boleh kosong.',
+      title
     });
   }
 
@@ -70,8 +73,19 @@ app.post('/shorten', async (req, res) => {
   } catch (e) {
     return res.render('index', {
       shortUrl: null,
-      error: 'URL tidak valid.'
+      error: 'URL tidak valid.',
+      title
     });
+  }
+
+  // Kalau title kosong, isi default dari host URL
+  if (!title) {
+    try {
+      const u = new URL(url);
+      title = `Konten dari ${u.hostname}`;
+    } catch (e) {
+      title = 'Konten yang kamu minta';
+    }
   }
 
   try {
@@ -84,27 +98,31 @@ app.post('/shorten', async (req, res) => {
       if (rows.length === 0) isUnique = true;
     }
 
-    await pool.query('INSERT INTO links (code, original_url) VALUES (?, ?)', [code, url]);
+    await pool.query(
+      'INSERT INTO links (code, original_url, title) VALUES (?, ?, ?)',
+      [code, url, title]
+    );
 
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const shortUrl = `${baseUrl}/${code}`;
 
     res.render('index', {
       shortUrl,
-      error: null
+      error: null,
+      title
     });
   } catch (err) {
     console.error(err);
     res.render('index', {
       shortUrl: null,
-      error: 'Terjadi kesalahan pada server.'
+      error: 'Terjadi kesalahan pada server.',
+      title
     });
   }
 });
 
 /**
  * API untuk lanjutkan (AJAX)
- * PENTING: route ini HARUS di atas route '/:code'
  */
 app.get('/api/continue/:code', async (req, res) => {
   const code = req.params.code;
@@ -130,7 +148,7 @@ app.get('/api/continue/:code', async (req, res) => {
   }
 });
 
-// Halaman redirect (tampilkan iklan + tombol lanjut)
+// Halaman redirect (tampilkan artikel + iklan + tombol lanjut)
 app.get('/:code', async (req, res) => {
   const code = req.params.code;
 
@@ -143,7 +161,8 @@ app.get('/:code', async (req, res) => {
     const link = rows[0];
 
     res.render('redirect', {
-      code: link.code // URL asli diambil via API /api/continue/:code
+      code: link.code,
+      title: link.title || 'Konten yang kamu minta'
     });
   } catch (err) {
     console.error(err);
