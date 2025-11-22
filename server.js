@@ -102,29 +102,10 @@ app.post('/shorten', async (req, res) => {
   }
 });
 
-// Halaman redirect (tampilkan iklan + tombol lanjut)
-app.get('/:code', async (req, res) => {
-  const code = req.params.code;
-
-  try {
-    const [rows] = await pool.query('SELECT * FROM links WHERE code = ?', [code]);
-    if (rows.length === 0) {
-      return res.status(404).send('Link tidak ditemukan.');
-    }
-
-    const link = rows[0];
-
-    res.render('redirect', {
-      code: link.code,
-      // Tidak perlu kirim url di HTML, kita ambil lewat API
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Terjadi kesalahan pada server.');
-  }
-});
-
-// API untuk lanjutkan (AJAX)
+/**
+ * API untuk lanjutkan (AJAX)
+ * PENTING: route ini HARUS di atas route '/:code'
+ */
 app.get('/api/continue/:code', async (req, res) => {
   const code = req.params.code;
 
@@ -146,6 +127,27 @@ app.get('/api/continue/:code', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.json({ success: false, message: 'Kesalahan server.' });
+  }
+});
+
+// Halaman redirect (tampilkan iklan + tombol lanjut)
+app.get('/:code', async (req, res) => {
+  const code = req.params.code;
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM links WHERE code = ?', [code]);
+    if (rows.length === 0) {
+      return res.status(404).send('Link tidak ditemukan.');
+    }
+
+    const link = rows[0];
+
+    res.render('redirect', {
+      code: link.code // URL asli diambil via API /api/continue/:code
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Terjadi kesalahan pada server.');
   }
 });
 
