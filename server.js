@@ -64,12 +64,13 @@ app.post('/shorten', async (req, res) => {
     });
   }
 
-  // Validasi simple
+  // Normalisasi & validasi URL
+  let parsedTarget;
   try {
     if (!/^https?:\/\//i.test(url)) {
       url = 'https://' + url;
     }
-    new URL(url); // kalau invalid akan throw
+    parsedTarget = new URL(url); // kalau invalid akan throw
   } catch (e) {
     return res.render('index', {
       shortUrl: null,
@@ -78,11 +79,28 @@ app.post('/shorten', async (req, res) => {
     });
   }
 
+  // Cegah short URL ke domain sendiri (biar tidak redirect loop)
+  try {
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseHost = new URL(baseUrl).host;
+    const targetHost = parsedTarget.host;
+
+    if (baseHost === targetHost) {
+      return res.render('index', {
+        shortUrl: null,
+        error: 'Tidak boleh mensingkat URL dari domain yang sama.',
+        title
+      });
+    }
+  } catch (e) {
+    // kalau parsing BASE_URL gagal, skip check
+    console.warn('Gagal memeriksa host BASE_URL:', e.message);
+  }
+
   // Kalau title kosong, isi default dari host URL
   if (!title) {
     try {
-      const u = new URL(url);
-      title = `Konten dari ${u.hostname}`;
+      title = `Konten dari ${parsedTarget.hostname}`;
     } catch (e) {
       title = 'Konten yang kamu minta';
     }
@@ -112,7 +130,7 @@ app.post('/shorten', async (req, res) => {
       title
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error INSERT link:', err);
     res.render('index', {
       shortUrl: null,
       error: 'Terjadi kesalahan pada server.',
@@ -123,6 +141,7 @@ app.post('/shorten', async (req, res) => {
 
 /**
  * API untuk lanjutkan (AJAX)
+ * HARUS di atas route '/:code'
  */
 app.get('/api/continue/:code', async (req, res) => {
   const code = req.params.code;
@@ -143,7 +162,7 @@ app.get('/api/continue/:code', async (req, res) => {
       url: link.original_url
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error API continue:', err);
     return res.json({ success: false, message: 'Kesalahan server.' });
   }
 });
@@ -165,7 +184,7 @@ app.get('/:code', async (req, res) => {
       title: link.title || 'Konten yang kamu minta'
     });
   } catch (err) {
-    console.error(err);
+    console.error('Error render redirect:', err);
     res.status(500).send('Terjadi kesalahan pada server.');
   }
 });
