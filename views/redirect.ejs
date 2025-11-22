@@ -97,9 +97,11 @@
 <script>
     (function () {
         const code = '<%= code %>';
+        // Direct-link iklan (BUKAN .js)
         const adClickUrl = "https://www.effectivegatecpm.com/fsneqkr9s?key=8d8dc55360ed10172b63c2e323f0f59d";
         let clickedOnce = false;
 
+        // Deteksi adblock sederhana
         function detectAdBlock() {
             const bait = document.createElement('div');
             bait.className = 'adsbox';
@@ -132,9 +134,10 @@
             const hint = document.getElementById('hint-text');
             const loader = document.getElementById('global-loader');
 
+            // Jalankan deteksi adblock sedikit terlambat
             setTimeout(detectAdBlock, 1200);
 
-            // Tahan tombol, tampilkan loading dulu
+            // Loading sebelum tombol muncul
             setTimeout(function () {
                 if (loader) loader.style.display = 'none';
                 btn.style.display = 'inline-flex';
@@ -149,7 +152,7 @@
                     return;
                 }
 
-                // KLIK PERTAMA → buka iklan onclick di tab baru
+                // KLIK PERTAMA → buka direct-link iklan di tab baru
                 if (!clickedOnce) {
                     clickedOnce = true;
 
@@ -164,7 +167,7 @@
                     return;
                 }
 
-                // KLIK KEDUA → redirect ke URL asli
+                // KLIK KEDUA → redirect ke URL asli via API
                 if (btn.classList.contains('loading')) return;
 
                 btn.classList.add('loading');
@@ -181,13 +184,15 @@
                 method: 'GET',
                 dataType: 'json',
                 success: function (res) {
+                    console.log('API response:', res);
                     if (res && res.success && res.url) {
                         window.location.href = res.url;
                     } else {
                         resetButton('Terjadi kesalahan, coba lagi.');
                     }
                 },
-                error: function () {
+                error: function (xhr, status, err) {
+                    console.error('AJAX error:', status, err);
                     resetButton('Gagal terhubung, coba lagi.');
                 }
             });
